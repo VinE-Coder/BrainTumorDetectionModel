@@ -1,0 +1,35 @@
+import cv2
+from inference import InferencePipeline
+from inference.core.interfaces.stream.sinks import render_boxes
+from inference.core.interfaces.camera.entities import VideoFrame
+
+INPUT_TYPE = "photo"  # Options: "video", "webcam", "photo"
+VIDEO_PATH = "downloads/IMG_4244.mp4"  # Path to video file
+IMAGE_PATH = "downloads/test image.jpg"  # Path to image file
+api_key = ""
+model_id = "brain-tumor-detection-o0ggc-sgkag-a86pp/1"
+
+def process_predictions(predictions: dict, video_frame: VideoFrame):
+    for pred in predictions['predictions']:
+        print(pred)
+    cv2.imshow("Inference", video_frame.frame)
+
+pipeline = InferencePipeline.init(
+    model_id=model_id,
+    api_key=api_key,
+    video_reference=0 if INPUT_TYPE == "webcam" else VIDEO_PATH if INPUT_TYPE == "video" else None,
+    on_prediction=process_predictions
+)
+
+if INPUT_TYPE in ["webcam", "video"]:
+    pipeline.start()
+    pipeline.join()
+elif INPUT_TYPE == "photo":
+    image = cv2.imread(IMAGE_PATH)
+    if image is None:
+        print(f"Error: Could not load image at {IMAGE_PATH}")
+    else:
+        pipeline.predict_frame(image)
+        cv2.waitKey(0)
+
+cv2.destroyAllWindows()
